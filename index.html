@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasir Josjismart - Sistem Point of Sales</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- NAVBAR HEADER -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-logo">KJ</div>
+                <div class="brand-text">
+                    <h1>Kasir Josjismart</h1>
+                    <span>Sistem Kasir & Point of Sales Modern</span>
+                </div>
+            </div>
+            <nav class="nav-links">
+                <button class="nav-btn active" onclick="gantiTab('pos')">Transaksi Kasir (POS)</button>
+                <button class="nav-btn" onclick="gantiTab('crud')">Kelola Data Produk (CRUD)</button>
+                <button class="nav-btn" onclick="gantiTab('riwayat')">Riwayat Transaksi</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="container">
+
+        <!-- ============================================================ -->
+        <!-- TAB 1: POINT OF SALES (KASIR) -->
+        <!-- ============================================================ -->
+        <section id="tab-pos" class="tab-pane active">
+            <div class="pos-layout">
+                
+                <!-- KOLOM KIRI: KATALOG PRODUK -->
+                <div class="pos-left">
+                    <div class="card">
+                        <div class="card-header flex-between">
+                            <h2>Katalog Produk</h2>
+                            <div class="filter-group">
+                                <input type="text" id="pos-search" class="form-input" placeholder="Cari nama / kode produk..." oninput="filterProdukPOS()">
+                                <select id="pos-kategori" class="form-select" onchange="filterProdukPOS()">
+                                    <option value="semua">Semua Kategori</option>
+                                    <option value="Makanan">Makanan & Minuman</option>
+                                    <option value="Elektronik">Elektronik</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kode</th>
+                                        <th>Nama Produk</th>
+                                        <th>Kategori</th>
+                                        <th>Harga</th>
+                                        <th>Stok</th>
+                                        <th>Keterangan</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabel-pos-body">
+                                    <!-- Diisi via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLOM KANAN: KERANJANG BELANJA & PEMBAYARAN -->
+                <div class="pos-right">
+                    <div class="card cart-card">
+                        <div class="card-header flex-between">
+                            <h2>Keranjang Kasir</h2>
+                            <button class="btn btn-sm btn-outline-danger" onclick="kosongkanKeranjang()">Reset</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-kasir">Nama Kasir Bertugas</label>
+                            <input type="text" id="input-kasir" class="form-input" value="Kasir 1">
+                        </div>
+
+                        <!-- LIST ITEM KERANJANG -->
+                        <div class="cart-items-wrapper">
+                            <table class="cart-table">
+                                <thead>
+                                    <tr>
+                                        <th>Produk</th>
+                                        <th>Qty</th>
+                                        <th>Subtotal</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="keranjang-body">
+                                    <tr class="empty-row">
+                                        <td colspan="4">Keranjang belanja masih kosong</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- RINGKASAN PEMBAYARAN -->
+                        <div class="payment-summary">
+                            <div class="summary-line">
+                                <span>Subtotal Kotor</span>
+                                <span id="lbl-total-kotor" class="summary-val">Rp 0</span>
+                            </div>
+                            <div class="summary-line text-success">
+                                <span>Diskon Produk (Promo)</span>
+                                <span id="lbl-total-diskon" class="summary-val">-Rp 0</span>
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="input-voucher">Voucher Promo (Rp)</label>
+                                <input type="number" id="input-voucher" class="form-input text-right" value="0" min="0" oninput="hitungTotalPembayaran()">
+                            </div>
+                            <div class="summary-line grand-total">
+                                <span>TOTAL AKHIR</span>
+                                <span id="lbl-total-akhir">Rp 0</span>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 14px;">
+                                <label for="input-bayar">Uang Tunai Pembeli (Rp)</label>
+                                <input type="number" id="input-bayar" class="form-input text-right text-lg" placeholder="0" min="0" oninput="hitungKembalianRealtime()">
+                            </div>
+
+                            <div class="summary-line kembalian-line">
+                                <span>Kembalian</span>
+                                <span id="lbl-kembalian" class="font-bold">Rp 0</span>
+                            </div>
+
+                            <button id="btn-bayar" class="btn btn-primary btn-block btn-lg" onclick="prosesCheckout()">
+                                Bayar & Cetak Struk
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- TAB 2: MASTER DATA PRODUK (CRUD) -->
+        <!-- ============================================================ -->
+        <section id="tab-crud" class="tab-pane">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <div>
+                        <h2>Kelola Master Data Produk</h2>
+                        <p class="subtitle">Tambah, lihat, edit, dan hapus data produk di sistem inventaris</p>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="bukaModalTambah('makanan')">+ Tambah Makanan</button>
+                        <button class="btn btn-info" onclick="bukaModalTambah('elektronik')">+ Tambah Elektronik</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kode</th>
+                                <th>Nama Produk</th>
+                                <th>Kategori</th>
+                                <th>Harga Satuan</th>
+                                <th>Stok</th>
+                                <th>Atribut Spesifik (OOP)</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabel-crud-body">
+                            <!-- Diisi via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- TAB 3: RIWAYAT TRANSAKSI -->
+        <!-- ============================================================ -->
+        <section id="tab-riwayat" class="tab-pane">
+            <div class="card">
+                <div class="card-header flex-between">
+                    <div>
+                        <h2>Riwayat Transaksi Penjualan</h2>
+                        <p class="subtitle">Daftar rekap seluruh transaksi yang telah berhasil dibayar</p>
+                    </div>
+                    <div class="stat-badge">
+                        <span>Total Pendapatan:</span>
+                        <strong id="lbl-grand-omset">Rp 0</strong>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>No. Transaksi</th>
+                                <th>Waktu Transaksi</th>
+                                <th>Kasir</th>
+                                <th>Jumlah Item</th>
+                                <th>Total Akhir</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabel-riwayat-body">
+                            <!-- Diisi via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- MODAL 1: FORM TAMBAH / UBAH PRODUK (CRUD) -->
+    <!-- ============================================================ -->
+    <div id="modal-produk" class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modal-produk-title">Tambah Produk Baru</h3>
+                <button class="btn-close" onclick="tutupModal('modal-produk')">&times;</button>
+            </div>
+            <form id="form-produk" onsubmit="simpanDataProduk(event)">
+                <input type="hidden" id="form-mode" value="tambah">
+                <input type="hidden" id="form-tipe" value="makanan">
+
+                <div class="form-group">
+                    <label for="prod-kode">Kode Produk</label>
+                    <input type="text" id="prod-kode" class="form-input" placeholder="Contoh: M04 / E04" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="prod-nama">Nama Produk</label>
+                    <input type="text" id="prod-nama" class="form-input" placeholder="Nama lengkap barang" required>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="prod-harga">Harga Satuan (Rp)</label>
+                        <input type="number" id="prod-harga" class="form-input" placeholder="Contoh: 15000" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prod-stok">Jumlah Stok</label>
+                        <input type="number" id="prod-stok" class="form-input" placeholder="Contoh: 50" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-group" id="group-khusus">
+                    <label id="lbl-khusus" for="prod-khusus">Tanggal Kadaluarsa (YYYY-MM-DD)</label>
+                    <input type="text" id="prod-khusus" class="form-input" placeholder="2026-12-31">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="tutupModal('modal-produk')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Produk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL 2: STRUK PEMBELIAN (RECEIPT) -->
+    <!-- ============================================================ -->
+    <div id="modal-struk" class="modal-backdrop">
+        <div class="modal-box modal-struk-box">
+            <div class="modal-header">
+                <h3>Struk Pembelian Kasir</h3>
+                <button class="btn-close" onclick="tutupModal('modal-struk')">&times;</button>
+            </div>
+            <div class="receipt-wrapper">
+                <pre id="struk-konten" class="receipt-text"></pre>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="tutupModal('modal-struk')">Tutup</button>
+                <button class="btn btn-primary" onclick="cetakStrukKertas()">Cetak Struk (Print)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT JS -->
+    <script src="app.js"></script>
+</body>
+</html>
